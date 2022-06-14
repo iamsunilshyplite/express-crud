@@ -2,6 +2,9 @@ const express=require('express');
 const bodyParser=require('body-parser')
 const app=express();
 const mysql=require('mysql');
+
+const yup = require("yup");
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,7 +27,27 @@ app.get('/api/users',(req,res)=>{
     handleQuery(fetchAllUsersQuery,res)
 });
 
-app.post('/api/user',(req,res)=>{
+
+const linkSchema = yup.object({
+    body: yup.object({
+      name: yup.string().required(),
+      email: yup.string().email().required(),
+      phone: yup.string().required(),
+    }),
+  });
+
+  const validate = (schema) => async (req, res, next) => {
+    try {
+      await schema.validate({
+        body: req.body,
+      });
+      return next();
+    } catch (err) {
+      return res.status(500).json({ type: err.name, message: err.message });
+    }
+  };
+  
+app.post('/api/user', validate(linkSchema),(req,res)=>{
     let data={
         'name':req.body.name,
         'phone':req.body.phone,
